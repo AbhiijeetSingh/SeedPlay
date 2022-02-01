@@ -7,7 +7,7 @@ import os
 
 def get_files(session, url):
     r = session.get(url)
-    parse_files(session, r.text, url)
+    return parse_files(session, r.text, url)
 
 
 def parse_files(session, files, url):
@@ -19,17 +19,20 @@ def parse_files(session, files, url):
             folders.append(link.get("href"))
         elif link.get("href")[-5:] != ".meta":
             videos.append(link.get("href"))
-    select_file(session, videos, folders, url)
+
+    return videos, folders
 
 
 def select_file(session, videos, folders, url):
     action = inquirer.select(message="Select an option",
                              choices=videos + folders, default=None).execute()
-    url = url + "/" + action
+    if action in videos:
+        return f"{url}/{action}"
     if action in folders:
-        get_files(session, url=url + f"/{action[0:-1]}")
-
-    play_media(url)
+        url = f"{url}/{action[0:-1]}"
+        videos, folders = get_files(session, url=(url))
+        action = select_file(session, videos, folders, url)
+        return f"{action}"
 
 
 def get_credentials():
@@ -50,6 +53,10 @@ def main():
     files_address = f"https://{username}:{password}@{username}.seedbox.io/files"
 
     session = requests.Session()
-    get_files(session, files_address)
+    videos, folders = get_files(session, files_address)
+
+    media_url = select_file(session, videos, folders, url=files_address)
+    play_media(url=media_url)
+
 
 main()
