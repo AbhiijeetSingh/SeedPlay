@@ -3,7 +3,15 @@ import requests
 from bs4 import BeautifulSoup
 from InquirerPy import inquirer
 import os
+from urllib.parse import unquote_plus
 
+
+class ParsedUrl:
+    def __init__(self, url):
+        self.url = url
+
+    def __str__(self):
+        return unquote_plus(self.url)
 
 def get_files(session, url):
     r = session.get(url)
@@ -16,9 +24,9 @@ def parse_files(session, files, url):
     soup = BeautifulSoup(files, "html.parser")
     for link in soup.find_all("a"):
         if link.get("href")[-1] == "/":
-            folders.append(link.get("href"))
+            folders.append(ParsedUrl(link.get("href")))
         elif link.get("href")[-5:] != ".meta":
-            videos.append(link.get("href"))
+            videos.append(ParsedUrl(link.get("href")))
 
     return videos, folders
 
@@ -27,9 +35,9 @@ def select_file(session, videos, folders, url):
     action = inquirer.select(message="Select an option",
                              choices=videos + folders, default=None).execute()
     if action in videos:
-        return f"{url}/{action}"
+        return f"{url}/{action.url}"
     if action in folders:
-        url = f"{url}/{action[0:-1]}"
+        url = f"{url}/{action.url[0:-1]}"
         videos, folders = get_files(session, url=(url))
         action = select_file(session, videos, folders, url)
         return f"{action}"
