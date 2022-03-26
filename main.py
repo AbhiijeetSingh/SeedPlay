@@ -17,6 +17,8 @@ def parse_files(files):
         elif link.get("href")[-5:] != ".meta":
             videos.append(DirectoryEntry(link.get("href")))
 
+    videos.sort(key=lambda x: x.url)
+    folders.sort(key=lambda x: x.url)
     return videos, folders
 
 
@@ -90,7 +92,7 @@ def select_file(session, videos, folders, url):
 
 
 def get_credentials():
-    with open("config.json", "r") as config_file:
+    with open(".\config.json", "r") as config_file:
         config = json.load(config_file)
         username = config["username"]
         password = config["password"]
